@@ -1,0 +1,23 @@
+import my_package
+import paramiko
+import time
+
+def connect(ip,portn,username,paswd):
+    ssh = paramiko.SSHClient()
+    ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+    ssh.connect( ip , port=portn , username=username , password=paswd)
+    return ssh
+
+
+def get_shell(ssh):
+    remote = ssh.invoke_shell()
+    return remote
+
+def send_command(remote,command):
+    remote.send(command + '\n')
+    time.sleep(30)
+    output = remote.recv(40000000)
+    return output
+
+def close(ssh):
+    ssh.close()
