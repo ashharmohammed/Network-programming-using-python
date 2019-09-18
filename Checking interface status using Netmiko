@@ -1,0 +1,45 @@
+from netmiko import Netmiko
+from netmiko import ConnectHandler
+from netmiko import file_transfer
+import csv
+
+cisco_device = {
+     'device_type': 'cisco_ios',
+     'ip' : '152.144.209.58',
+     'username' : 'admin',
+     'password' : 'Tg2BaBw!',
+     'port': 22,
+     'secret' : 'Tg2BaBw!',
+     'verbose' : True
+}
+
+
+con = ConnectHandler(**cisco_device)
+
+con.enable()
+
+#int = str(raw_input("Interface name:"))
+interfaces = con.send_command('sh ip int br')
+#print(interfaces)
+
+int1 = interfaces.split()
+
+
+print(int1[3]
+
+
+
+
+#out = con.send_command('sh int ' + int)
+#if 'Invalid input detected' in out:
+    print('You entered and invalid interfac')
+
+else:
+    first_line = out.splitlines()[0]
+    print(first_line)
+
+if 'down' in first_line:
+    print("interface is down")
+
+else:
+    print('interface is up')
