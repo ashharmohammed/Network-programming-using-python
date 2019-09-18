@@ -1,0 +1,21 @@
+from netmiko import Netmiko
+from netmiko import ConnectHandler
+from netmiko import file_transfer
+
+cisco_device = {
+     'device_type': 'cisco_ios',
+     'ip' : '152.144.209.58',
+     'username' : 'admin',
+     'password' : 'Tg2BaBw!',
+     'port': 22,
+     'secret' : 'Tg2BaBw!',
+     'verbose' : True
+
+con = ConnectHandler(**cisco_device)
+
+transfer = file_transfer(con, source_file='', file_system='flash0',direction='put')
+
+print(transfer)
+
+
+
