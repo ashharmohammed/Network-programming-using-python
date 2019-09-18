@@ -1,0 +1,39 @@
+from netmiko import Netmiko
+from netmiko import ConnectHandler
+
+cisco_device = {
+     'device_type': 'cisco_ios',
+     'ip' : '152.144.209.58',
+     'username' : 'admin',
+     'password' : 'Tg2BaBw!',
+     'port': 22,
+     'secret' : 'Tg2BaBw!',
+     'verbose' : True
+}
+
+connection = ConnectHandler(**cisco_device)
+
+x = connection.find_prompt()
+print(x)
+
+if '>' in x:
+    connection.enable()
+
+#connection.send_command_timing("config terminal")
+
+y = connection.check_config_mode()
+print(y)
+
+if not y:
+    connection.config_mode()
+
+z = connection.check_config_mode()
+print(z)
+
+
+#out = connection.send_command('do show version')
+
+#print(out)
+
+connection.disconnect()
+
