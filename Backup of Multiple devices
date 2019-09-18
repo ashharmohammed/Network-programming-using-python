@@ -1,0 +1,23 @@
+import my_package
+f1 = open('input.txt')
+for line in f1:
+    line = line.strip()
+    ssh = my_package.connect(line,22,'root','Tg2BaBw!')
+    con = my_package.get_shell(ssh)
+    my_package.send_command(con,'tmsh')
+    my_package.send_command(con,'show running-config')
+    out = my_package.send_command(con,'y')
+    #print(out.decode())
+    out_str = out.decode()
+
+    #one method
+    #with open('config', 'w') as f:
+        #f.write(out_str)
+
+    #second method:
+    import datetime
+    now = datetime.datetime.now()
+    today = str(now.year) + '-' + str(now.month) + '-' + str(now.day)
+    file = line + '-' + today + '.txt'
+    f = open(file,'w')
+    f.write(out_str)
