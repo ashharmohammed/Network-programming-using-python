@@ -1,0 +1,35 @@
+import paramiko
+import my_package
+import getpass
+#ip = input('Enter IP address')
+f1 = open('input.txt')
+
+for line in f1:
+    try:
+        line = line.strip()
+        ssh = my_package.connect(line,22,'xxxx','xxxx')
+        con = my_package.get_shell(ssh)
+        x = str(my_package.send_command(con,'conf t'))
+        if 'WARNING' in x:
+            print(line + ' is standby firewall')
+            continue
+        my_package.send_command(con, "object-group network RYUK-External-IOCs")
+        my_package.send_command(con, "network-object 162.217.96.0 255.255.255.248.0 ")
+        my_package.send_command(con,'exit')
+        my_package.send_command(con,'exit')
+        my_package.send_command(con,'wr')
+        print('Blocked on ' + line)
+    except paramiko.ssh_exception.AuthenticationException:
+        line = line.strip()
+        ssh = my_package.connect(line, 22, '', '')
+        con = my_package.get_shell(ssh)
+        x = str(my_package.send_command(con, 'conf t'))
+        if 'WARNING' in x:
+            print(line + ' is standby firewall')
+            continue
+        my_package.send_command(con, "object-group network RYUK-External-IOCs")
+        my_package.send_command(con, "network-object 144.202.0.0 255.255.0.0 ")
+        my_package.send_command(con, 'exit')
+        my_package.send_command(con, 'exit')
+        my_package.send_command(con, 'wr')
+        print('Blocked on ' + line)
