@@ -1,0 +1,24 @@
+from netmiko import Netmiko
+from netmiko import ConnectHandler
+
+f1 = open('test.txt')
+
+for line in f1:
+    line = line.strip()
+    cisco_device = {
+        'device_type': 'cisco_ios',
+        'ip': line,
+        'username': 'pbadmins',
+        'password': 'pb@f!RE&#@l#',
+        'port': 22,
+        'secret': 'Tg2BaBw!',
+        'verbose': True
+    }
+    con = ConnectHandler(**cisco_device)
+    name = con.find_prompt()
+    y = con.send_config_set('object-group network RYUK-External-IOCs')
+    if 'WARNING' in y:
+        print(name + ' is secondary fw')
+        continue
+    else:
+        print(name + ' is primary fw')
