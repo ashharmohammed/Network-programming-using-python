@@ -1,0 +1,63 @@
+import my_package
+import paramiko
+import netmiko
+import datetime
+import os
+import time
+from netmiko import ConnectHandler
+
+
+
+
+f1 = open('sample.txt')
+for line in f1:
+    line = line.strip()
+    try:
+        cisco_device = {
+            'device_type': 'cisco_ios',
+            'ip': line ,
+            'username': 'nex8kwp' ,
+            'password': 'Ernesto@123',
+            'port': 22,
+            'secret': 'Ernesto@123',
+            'verbose': True
+        }
+        con = ConnectHandler(**cisco_device)
+    except paramiko.ssh_exception.AuthenticationException:
+        cisco_device = {
+            'device_type': 'cisco_ios',
+            'ip': line,
+            'username': 'pbadmins',
+            'password': 'pb@f!RE&#@l#',
+            'port': 22,
+            'secret': 'pb@f!RE&#@l#',
+            'verbose': True
+        }
+        print('using exception')
+        con = ConnectHandler(**cisco_device)
+    except netmiko.ssh_exception.NetMikoTimeoutException:
+        print(line + ' is not reachable')
+        continue
+    except netmiko.ssh_exception.NetMikoAuthenticationException:
+        print(line + ' Password is not working')
+        continue
+    name = con.find_prompt()
+    con.send_command('terminal pager 0')
+    out = con.send_command('more system:running-config',expect_string=None)
+    time.sleep(60)
+    host=name.replace('/','-')
+    now = datetime.datetime.now()
+    today = str(now.year) + '_' + str(now.month) + '_' + str(now.day)
+    file = host + today
+    with open('C:\\Users\\mo374242\\Desktop\\' + file,"w") as f:
+        f.write(out)
+
+
+
+
+
+    #one method
+    #with open('config', 'w') as f:
+        #f.write(out_str)
+
+    #second method:
