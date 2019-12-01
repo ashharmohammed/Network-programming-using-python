@@ -1,0 +1,82 @@
+from netmiko import Netmiko
+from netmiko import ConnectHandler
+import xlsxwriter
+
+import openpyxl
+from openpyxl import workbook
+from openpyxl import load_workbook
+
+from xlwt import Workbook
+
+import time
+import datetime
+import os
+import smtplib
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
+from email.mime.base import MIMEBase
+from email import encoders
+
+
+os.chdir('C:\\Users\\mo374242\\Desktop')
+wb = load_workbook("C:\\Users\\mo374242\\Desktop\\F5_sync_status.xlsx")
+sheet = wb.get_sheet_by_name('Sheet1')
+
+i = 2
+
+now = datetime.datetime.now()
+today = str(now.year) + '_' + str(now.month) + '_' + str(now.day)
+
+f1 = open('lb.txt')
+
+for line in f1:
+    line = line.strip()
+    f5_device = {
+            'device_type': 'f5_tmsh_ssh',
+            'ip': line ,
+            'username': 'root' ,
+            'password': 'Tg2BaBw!',
+            'port': 22,
+            'secret': 'Tg2BaBw!',
+            'verbose': True,
+            'blocking_timeout': 50
+        }
+
+    con = ConnectHandler(**f5_device)
+    sync = con.send_command('show /cm sync-status')
+    sync = sync.splitlines()
+    sync = sync[5]
+    sync = sync.split()
+    sync = str(sync[1:])
+    if 'In' in sync:
+        sheet['B' + str(i)].value = 'In Sync'
+        print("sync")
+    else:
+        sheet['B' + str(i)].value = 'Out of Sync'
+        print("out of sync")
+
+    i = i+1
+
+wb.save("F5_sync_status_" + today + ".xlsx")
+
+fromaddr = "ashhar.mohammed@pb.com"
+toaddr = "TC-ISS-DataNetops@pb.com,Kalpana.Bharti@pb.com"
+msg = MIMEMultipart()
+msg['From'] = fromaddr
+msg['To'] = toaddr
+msg['Subject'] = "F5 Load balancer daily Sync status"
+body = "Team,\n\nPlease find attached sync status of load balancers and please sync if any LB is in out of sync state "
+msg.attach(MIMEText(body, 'plain'))
+filename = "F5_sync_status_" + today + ".xlsx"
+
+attachment = open("C:\\Users\\mo374242\\Desktop\\F5_sync_status_" + today + ".xlsx", "rb")
+
+p = MIMEBase('application', 'octet-stream')
+p.set_payload((attachment).read())
+encoders.encode_base64(p)
+p.add_header('Content-Disposition', 'attachment; filename = F5_sync_status.xlsx')
+msg.attach(p)
+s = smtplib.SMTP('smtp.pb.com')
+
+s.send_message(msg)
+s.quit()
