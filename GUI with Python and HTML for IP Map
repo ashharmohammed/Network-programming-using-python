@@ -1,0 +1,101 @@
+#Front end HTML page, Python will search the excel for the IP provded by the user in excel and retrun the output back to web page.
+def index():
+    return """
+<html><head>
+<title>IP Lookup</title>
+</head>
+<body>
+<h1>IP Lookup Tool</h1>
+<FORM value="form" action="get_info" method="post">
+  <P>
+        <LABEL for="PublicIP">Public IP: </LABEL>
+        <INPUT type="text" name="PublicIP"><BR>
+        <INPUT type="submit" value="Find"> <INPUT type="reset">
+
+  </P>
+</FORM>
+</body>
+</html>
+"""
+
+
+def get_info(req):
+    info = req.form
+    key = info['PublicIP']
+    # import load_workbook
+    from openpyxl import load_workbook
+    # load demo.xlsx
+    wb = load_workbook("/var/www/html/test/IPMAP.xlsx")
+    # select demo.xlsx
+    sheet = wb.active
+    # get max row count
+    max_row = sheet.max_row
+    # get max column count
+    max_column = sheet.max_column
+    # iterate over all cells
+    # iterate over all rows
+    index = 0
+    for i in range(1, max_row + 1):
+
+        # iterate over all columns
+        for j in range(1, max_column + 1):
+            # get particular cell value
+            if str(key) in str(sheet.cell(row=i, column=j).value):
+                index = i
+                break
+
+    
+    
+    if index == 0:
+        from warnings import filterwarnings
+        filterwarnings(action="ignore")
+        from ipwhois import IPWhois
+        obj = IPWhois(key)
+        result = obj.lookup_whois()
+        return """
+        <html><head>
+        <title>IP Lookup Result</title>
+        </head>
+        <body >
+        <h1>IP Lookup Result</h1>
+        <h2>No Lookup has found, If you still have concern please raise SR with netops to know more</h2>
+        <hr>
+        Details of IP from ARIN: %s
+        </body>
+        </html>
+        """%(result)
+
+    else:
+        Publicip = sheet.cell(row=index, column=1).value
+        Privateip = sheet.cell(row=index, column=2).value
+        Fwzone = sheet.cell(row=index, column=3).value
+        Lbname = sheet.cell(row=index, column=4).value
+        VIPname = sheet.cell(row=index, column=6).value
+        VIP = sheet.cell(row=index, column=5).value
+        Ssl = sheet.cell(row=index, column=7).value
+        Pool = sheet.cell(row=index, column=8).value
+        Mem = sheet.cell(row=index, column=9).value
+        Memname = sheet.cell(row=index, column=10).value
+        Stat = sheet.cell(row=index, column=11).value
+
+        return """
+        <html><head>
+        <title>IP Lookup Result</title>
+        </head>
+        <body>
+        <h1>IP Lookup Result</h1>
+        <hr>
+        Public IP: %s <br>
+        Private IP: %s <br>
+        Firewall Zone: %s <br>
+        LB Name: %s <br>
+        Virtual server IP: %s <br>
+        Virtual Server Name: %s <br>
+        Status: %s <br>
+        SSl Profile: %s <br>
+        Pool Name: %s <br>
+        Backend Server IPs: %s <br>
+        Backend server name with service: %s <br>
+        </body>
+        </html>
+        """%(Publicip, Privateip, Fwzone, Lbname, VIP, VIPname, Stat, Ssl, Pool, Mem, Memname)
