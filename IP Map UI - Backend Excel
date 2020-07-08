@@ -1,0 +1,366 @@
+
+from netmiko import Netmiko
+from netmiko import ConnectHandler
+import xlsxwriter
+
+
+workbook = xlsxwriter.Workbook('IPMAP.xlsx')
+sheet = workbook.add_worksheet()
+sheet.write(0, 0, "Public IP")
+sheet.write(0, 1, "Private IP")
+sheet.write(0, 2, "Firewall Zone")
+sheet.write(0, 3, "LB Name")
+sheet.write(0, 4, "VIP IP")
+sheet.write(0, 5, "VIP Name")
+sheet.write(0, 6, "Status")
+sheet.write(0, 7, "SSL Profile")
+sheet.write(0, 8, "Pool Name")
+sheet.write(0, 9, "Pool Member IPs")
+sheet.write(0, 10, "Pool Member name with Service")
+sheet.write(0, 11, "Member server status")
+i = 1
+
+fws = [""]
+for fw in fws:
+    cisco_device = {
+         'device_type': 'cisco_asa',
+         'ip' : fw,
+         'username' : '',
+         'password' : '',
+         'port': 22,
+         'secret' : '',
+         'verbose' : True
+    }
+
+    con = ConnectHandler(**cisco_device)
+    con.send_command("terminal pager 0")
+
+    def xlate(ip):
+        nat = con.send_command("show xlate | i " + ip + " ")
+        if len(nat) == 0:
+            return None
+        else:
+            if not "PAT" in nat:
+                nat = nat.split()
+                dmzint, dmzip = nat[2].split(":")
+                destint, pubip = nat[4].split(":")
+                return dmzint, dmzip, pubip
+            else:
+                return None
+
+
+    def myvip(ip,con): #to find vip details from LB
+        vs = con.send_command("list ltm virtual | grep -A 10 -B 10 " + ip + ":")
+        lis = vs.splitlines()
+        #print(lis)
+
+
+        pools = []
+        vips = []
+        profiles = []
+        members = []
+        memips = []
+        state = []
+        available = []
+        for i in lis:  #fidning VIPS
+            if "ltm" in i:
+                i = i.split()
+                vips.append(i[2])
+                #print("vips: " + str(vips))
+        for i in vips: #finding pool name and SSL profile
+            vipdet = con.send_command("list ltm virtual " + i + " one-line")
+            vipdet = vipdet.split()
+            for j in vipdet:
+                if j == "pool":
+                    pool = vipdet[vipdet.index(j) + 1] # list item after the pool
+                    if not pool in pools:
+                        pools.append(pool)
+                    #print("pools: " + str(pools))
+                if "clientside" in j:
+                    profiles.append(vipdet[vipdet.index(j) - 3])
+                    #print("profiles: " + str(profiles))
+
+        for i in pools: #finding pool member
+            mems = con.send_command("list ltm pool " + i + " one-line")
+            mems = mems.split()
+            for j in mems:
+                 if ":" in j:
+                    members.append(j)
+                 if "address" in j:
+                     memips.append(mems[mems.index(j) + 1])
+                 if "state" in j:
+                     state.append(mems[mems.index(j) + 1])
+            #print(ServerPort,members)
+        for i in vips:
+            status = con.send_command("show ltm virtual " + i + " | grep Availability")
+            status = status.split(":")
+            #print(status)
+            available.append(status[1])
+
+
+        return vips,pools,profiles,members,available,memips,state
+
+
+
+    #Fucntion to  write to excel
+    def excelwrite(i,pvtip,vipdet,lb):
+        print("Inside excel function")
+        print(i)
+        sheet.write(i, 0, pvtip[2])
+        sheet.write(i, 1, pvtip[1])
+        sheet.write(i, 2, pvtip[0])
+        if len(vipdet[0]) == 0:
+            sheet.write(i, 3, "NA")
+        else:
+            sheet.write(i, 3, lb)
+            sheet.write(i, 4, pvtip[1])
+            vip = ", ".join(vipdet[0])
+            print(vip)
+            sheet.write(i, 5, vip)
+            status = ", ".join(vipdet[4])
+            sheet.write(i, 6, status)
+            profile = ", ".join(vipdet[2])
+            sheet.write(i, 7, profile)
+            pool = ", ".join(vipdet[1])
+            sheet.write(i, 8, pool)
+            members = ", ".join(vipdet[5])
+            sheet.write(i, 9, members)
+            name = ", ".join(vipdet[3])
+            sheet.write(i, 10, name)
+            stat = ", ".join(vipdet[6])
+            sheet.write(i, 11, stat)
+
+
+
+
+
+    lbs = []
+
+    #Connecttion Points to LBs
+    f5_device1 = {
+            'device_type': 'f5_ltm',
+            'ip': "",
+            'username': '',
+            'password': '',
+            'port': 22,
+            'secret': '!',
+            'verbose': True
+        }
+    tdclb15 = ConnectHandler(**f5_device1)
+
+    f5_device2 = {
+        'device_type': 'f5_ltm',
+        'ip': "",
+        'username': '',
+        'password': '',
+        'port': 22,
+        'secret': '!',
+        'verbose': True
+    }
+    tdclb17 = ConnectHandler(**f5_device2)
+
+    f5_device3 = {
+        'device_type': 'f5_ltm',
+        'ip': "",
+        'username': '',
+        'password': '',
+        'port': 22,
+        'secret': 'Tg2BaBw!',
+        'verbose': True
+    }
+    tdclb19 = ConnectHandler(**f5_device3)
+
+    f5_device4 = {
+        'device_type': 'f5_ltm',
+        'ip': "",
+        'username': '',
+        'password': '',
+        'port': 22,
+        'secret': ',
+        'verbose': True
+    }
+    kdclb15 = ConnectHandler(**f5_device4)
+
+    f5_device5 = {
+        'device_type': 'f5_ltm',
+        'ip': "",
+        'username': '',
+        'password': '',
+        'port': 22,
+        'secret': '',
+        'verbose': True
+    }
+    kdclb17 = ConnectHandler(**f5_device5)
+
+    f5_device6 = {
+        'device_type': 'f5_ltm',
+        'ip': "",
+        'username': '',
+        'password': '',
+        'port': 22,
+        'secret': '',
+        'verbose': True
+    }
+    kdclb19 = ConnectHandler(**f5_device6)
+
+    f5_device10 = {
+        'device_type': 'f5_ltm',
+        'ip': "",
+        'username': '',
+        'password': '',
+        'port': 22,
+        'secret': '',
+        'verbose': True
+    }
+    kdcqalb = ConnectHandler(**f5_device10)
+
+    f5_device7 = {
+        'device_type': 'f5_ltm',
+        'ip': "",
+        'username': '',
+        'password': '',
+        'port': 22,
+        'secret': '',
+        'verbose': True
+    }
+    mdclb3 = ConnectHandler(**f5_device7)
+
+    f5_device8 = {
+        'device_type': 'f5_ltm',
+        'ip': "",
+        'username': '',
+        'password': '',
+        'port': 22,
+        'secret': '',
+        'verbose': True
+    }
+    ldclb3 = ConnectHandler(**f5_device8)
+
+    f5_device9 = {
+        'device_type': 'f5_ltm',
+        'ip': "",
+        'username': '',
+        'password': '',
+        'port': 22,
+        'secret': '',
+        'verbose': True
+    }
+    sdclb3 = ConnectHandler(**f5_device9)
+
+
+
+
+    arps = con.send_command("show arp")
+    arps = arps.splitlines()
+    for arp in arps:
+            arp = arp.split()
+            print(arp)
+            ip = arp[1]
+            mac = arp[2]
+            #print(ip,mac)
+            pvtip = xlate(ip)
+            if pvtip is None:
+                continue
+            if mac in ["0023.e985.5487", "0023.e985.5207"]:
+                print("inside tdc lb15")
+                vipdet = myvip(ip, tdclb15)
+                lb = "TDCLB15"
+                print(vipdet)
+                excelwrite(i,pvtip,vipdet,lb)
+                i = i + 1
+
+            elif mac in ["0023.e985.5506", "0023.e985.5386"]:
+                print("inside tdc lb17")
+                vipdet = myvip(ip, tdclb17)
+                lb = "TDCLB17"
+                print(vipdet)
+                excelwrite(i,pvtip,vipdet,lb)
+                i = i + 1
+
+            elif mac in ["0023.e985.5522", "0023.e985.53a2"]:
+                print("inside tdc lb19")
+                vipdet = myvip(ip, tdclb19)
+                lb = "TDCLB19"
+                print(vipdet)
+                excelwrite(i,pvtip,vipdet,lb)
+                i = i + 1
+
+            elif mac in ["0023.e985.5307", "0023.e985.51e4"]:
+                print("inside kdc lb15")
+                vipdet = myvip(ip, kdclb15)
+                lb = "KDCLB15"
+                print(vipdet)
+                excelwrite(i,pvtip,vipdet,lb)
+                i = i + 1
+            elif mac in ["0023.e985.533f", "0023.e985.51ff"]:
+                print("inside kdc lb17")
+                vipdet = myvip(ip, kdclb17)
+                lb = "KDCLB17"
+                print(vipdet)
+                excelwrite(i,pvtip,vipdet,lb)
+                i = i + 1
+
+            elif mac in ["0023.e985.5405", "0023.e985.50c5"]:
+                print("inside kdc lb19")
+                vipdet = myvip(ip, kdclb19)
+                lb = "KDCLB19"
+                print(vipdet)
+                excelwrite(i,pvtip,vipdet,lb)
+                i = i + 1
+
+            elif mac in ["0023.e985.5396", "0023.e985.5256"]:
+                print("inside kdc qa")
+                vipdet = myvip(ip, kdcqalb)
+                lb = "KDCQALB"
+                print(vipdet)
+                excelwrite(i,pvtip,vipdet,lb)
+                i = i + 1
+
+            elif mac in ["0023.e933.aa44", "0023.e933.aa45", "0023.e933.7984", "0023.e933.7985"]:
+                print("inside MDC lb")
+                vipdet = myvip(ip, mdclb3)
+                lb = "MDCLB3"
+                print(vipdet)
+                excelwrite(i,pvtip,vipdet,lb)
+                i = i + 1
+
+            elif mac in ["0001.d7e7.0043", "0001.d7e7.0044", "0001.d7e6.e7c3", "0001.d7e6.e7c4"]:
+                print("inside ldc lb")
+                vipdet = myvip(ip, ldclb3)
+                lb = "LDCLB3"
+                print(vipdet)
+                excelwrite(i,pvtip,vipdet,lb)
+                i = i + 1
+
+            elif mac in ["0001.d7e6.f703", "0023.e931.ad06"]:
+                print("inside SDC lb")
+                vipdet = myvip(ip, sdclb3)
+                lb = "SDCLB3"
+                print(vipdet)
+                excelwrite(i,pvtip,vipdet,lb)
+                i = i + 1
+            else:
+                sheet.write(i, 3, "NA")
+                sheet.write(i, 0, pvtip[2])
+                sheet.write(i, 1, pvtip[1])
+                sheet.write(i, 2, pvtip[0])
+                i = i + 1
+
+
+    tdclb15.disconnect()
+    tdclb17.disconnect()
+    tdclb19.disconnect()
+    kdcqalb.disconnect()
+    kdclb15.disconnect()
+    kdclb17.disconnect()
+    kdclb19.disconnect()
+    mdclb3.disconnect()
+    ldclb3.disconnect()
+    sdclb3.disconnect()
+    con.disconnect()
+workbook.close()
+
+
+
+
+
