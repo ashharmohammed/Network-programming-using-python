@@ -7,3 +7,23 @@ def hell():
     return "hello world"
 
 app.run(port=8080)
+
+
+#Creating DNS A record using GET Method.....
+
+from flask import Flask, jsonify
+from ns1 import NS1
+
+app = Flask(__name__)
+
+@app.route('/<string:url>/<string:ip>', methods= ["GET"])
+def getarecord(url,ip):
+    api = NS1(apiKey='****')
+    z = url.split(".")
+    z = z[1]
+    print(z)
+
+    zone = api.loadZone(z + ".com")
+    rec = zone.add_A(url, ip)
+    return 200
+app.run(port=8080)
