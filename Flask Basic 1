@@ -27,3 +27,20 @@ def getarecord(url,ip):
     rec = zone.add_A(url, ip)
     return 200
 app.run(port=8080)
+
+
+#Creating DNS record using Post method............
+
+@app.route('/',methods=['POST'])
+def crtarecord():
+    req= request.get_json()
+    url = req['url']
+    ip = req['ip']
+    api = NS1(apiKey='Dwn**iP')
+    z = url.split(".")
+    z = z[1]
+    print(z)
+    zone = api.loadZone(z + ".com")
+    rec = zone.add_A(url, ip)
+    return '', 201
+app.run(port=8080, debug=True)
