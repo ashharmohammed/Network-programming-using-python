@@ -1,0 +1,37 @@
+from easysnmp import Session
+from pythonping import ping
+from ipaddress import IPv4Network
+import easysnmp
+import os
+def check_ping(ip):
+    response = os.system("ping " + str(ip))
+    # and then check the response...
+    if response == 0:
+        pingstatus = "Network Active"
+    else:
+        pingstatus = "Network Error"
+
+    return pingstatus
+device = ""
+for addr in IPv4Network('ip/25'):
+    try:
+        session = Session(hostname = str(addr), community='', version=2)
+        hostname = session.get('.1.3.6.1.4.1.9.2.1.3.0')
+        print(hostname.value)
+        device = device + hostname.value + "," + str(addr)
+        #ipforward = session.get('ipForwarding.0')
+        model = session.get('sysDescr.0').value
+        model = model.split(",")
+        mod = model[1]
+        mod = mod.split("Software")
+        mod = mod[0]
+        ver = model[2].split()
+        ver = ver[1]
+        device = device + ", " + mod + ", " + ver
+
+        print(device)
+    except easysnmp.exceptions.EasySNMPTimeoutError:
+        status = check_ping(addr)
+        if status == "Network Active":
+            print(addr + " is reachable but SNMP is not working")
+
