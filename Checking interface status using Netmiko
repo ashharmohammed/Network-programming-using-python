@@ -6,10 +6,10 @@ import csv
 cisco_device = {
      'device_type': 'cisco_ios',
      'ip' : '152.144.209.58',
-     'username' : 'admin',
-     'password' : 'Tg2BaBw!',
+     'username' : '',
+     'password' : '',
      'port': 22,
-     'secret' : 'Tg2BaBw!',
+     'secret' : '',
      'verbose' : True
 }
 
