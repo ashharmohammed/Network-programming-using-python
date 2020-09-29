@@ -1,0 +1,109 @@
+from netmiko import Netmiko
+from netmiko import ConnectHandler
+import xlsxwriter
+
+workbook = xlsxwriter.Workbook('InternalVIPs.xlsx')
+sheet = workbook.add_worksheet()
+#sheet.write(0, 0, "Public IP")
+#sheet.write(0, 1, "Private IP")
+#sheet.write(0, 2, "Firewall Zone")
+sheet.write(0, 0, "LB Name")
+sheet.write(0, 1, "VIP IP")
+sheet.write(0, 2, "VIP Name")
+sheet.write(0, 3, "Status")
+sheet.write(0, 4, "SSL Profile")
+sheet.write(0, 5, "Pool Name")
+sheet.write(0, 6, "Pool Member IPs")
+sheet.write(0, 7, "Member server status")
+k = 1
+
+
+
+lbname = {"161.228.65.29": "Kdc-lb12a", "161.228.65.23": "Kdc-lb6a", "161.228.65.41": "Kdc-lb8a", "161.228.72.24": "Ldc-Lb2a", "152.144.183.249": "Mdc-lb2a", "161.228.255.20": "Sdc-lb2a", "152.144.38.23": "Tdc-lb6a", "152.144.38.29": "Tdc-Lb8a", "152.144.38.36": "Tdc-lb12a", "152.144.249.33": "Wv-lb21"}
+LBS = ["161.228.65.29", "161.228.65.23", "161.228.65.41", "161.228.72.24", "152.144.183.249", "161.228.255.20", "152.144.38.23", "152.144.38.29", "152.144.38.36", "152.144.249.33"]
+for LB in LBS:
+    f5_device = {
+            'device_type': 'f5_ltm',
+            'ip': LB,
+            'username': '',
+            'password': '',
+            'port': 22,
+            'secret': '!',
+            'verbose': True
+        }
+    con = ConnectHandler(**f5_device)
+
+    virtuals = con.send_command("list ltm virtual-address | grep virtual-address")
+    virtuals = virtuals.splitlines()
+
+    for virtual in virtuals:
+        virtual = virtual.split()
+        virtual = virtual[2]
+        print(virtual)
+
+        vs = con.send_command("list ltm virtual | grep -A 10 -B 10 " + virtual + ":")
+        lis = vs.splitlines()
+        pools = []
+        vips = []
+        profiles = []
+        members = []
+        memips = []
+        state = []
+        available = []
+        for i in lis:  #fidning VIPS
+            if "ltm" in i:
+                i = i.split()
+                vips.append(i[2])
+                print("vips: " + str(vips))
+        for i in vips: #finding pool name and SSL profile
+            vipdet = con.send_command("list ltm virtual " + i + " one-line")
+            vipdet = vipdet.split()
+            for j in vipdet:
+                if j == "pool":
+                    pool = vipdet[vipdet.index(j) + 1] # list item after the pool
+                    if not pool in pools:
+                        pools.append(pool)
+                    #print("pools: " + str(pools))
+                if "clientside" in j:
+                    profiles.append(vipdet[vipdet.index(j) - 3])
+                    print("profiles: " + str(profiles))
+
+        for i in pools: #finding pool member
+            mems = con.send_command("list ltm pool " + i + " one-line")
+            mems = mems.split()
+            for j in mems:
+                 if ":" in j:
+                    members.append(j)
+                 if "address" in j:
+                     memips.append(mems[mems.index(j) + 1])
+                 if "state" in j:
+                     state.append(mems[mems.index(j) + 1])
+            #print(ServerPort,members)
+        for i in vips:
+            status = con.send_command("show ltm virtual " + i + " | grep Availability")
+            status = status.split(":")
+            print(status)
+            available.append(status[1])
+
+    #return vips, pools, profiles, members, available, memips, state
+
+        sheet.write(k, 0, lbname[LB])
+        sheet.write(k, 1, virtual)
+        vipn = ", ".join(vips)
+        print(vipn)
+        sheet.write(k, 2, vipn)
+        status = ", ".join(available)
+        print(type(status))
+        sheet.write(k, 3, status)
+        profile = ", ".join(profiles)
+        sheet.write(k, 4, profile)
+        pool = ", ".join(pools)
+        sheet.write(k, 5, pool)
+        members = ", ".join(memips)
+        sheet.write(k, 6, members)
+        stat = ", ".join(state)
+        sheet.write(k, 7, stat)
+
+        k = k + 1
+
+workbook.close()
