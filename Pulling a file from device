@@ -2,7 +2,7 @@ import my_package
 from scp import SCPClient
 import time
 
-ssh = my_package.connect('161.228.69.23', 22, 'root', 'Tg2BaBw!')
+ssh = my_package.connect('161.228.69.23', 22, '', '!')
 con = my_package.get_shell(ssh)
 my_package.send_command(con,'tmsh')
 out = my_package.send_command(con,'qkview')
