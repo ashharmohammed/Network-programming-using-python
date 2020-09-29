@@ -34,10 +34,10 @@ for line in f1:
     f5_device = {
             'device_type': 'f5_tmsh_ssh',
             'ip': line ,
-            'username': 'root' ,
-            'password': 'Tg2BaBw!',
+            'username': '' ,
+            'password': '',
             'port': 22,
-            'secret': 'Tg2BaBw!',
+            'secret': '!',
             'verbose': True,
             'blocking_timeout': 50
         }
@@ -59,8 +59,8 @@ for line in f1:
 
 wb.save("F5_sync_status_" + today + ".xlsx")
 
-fromaddr = "ashhar.mohammed@pb.com"
-toaddr = "TC-ISS-DataNetops@pb.com,Kalpana.Bharti@pb.com"
+fromaddr = ""
+toaddr = ""
 msg = MIMEMultipart()
 msg['From'] = fromaddr
 msg['To'] = toaddr
