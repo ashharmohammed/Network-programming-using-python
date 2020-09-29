@@ -1,0 +1,27 @@
+import os
+from netmiko import Netmiko, ConnectHandler
+
+os.environ["NET_TEXTFSM"] = "FSMTemplates/ntc-templates-master/templates"
+
+cisco_device = {
+         'device_type': 'cisco_ios',
+         'ip' : ip,
+         'username' : '',
+         'password' : '!',
+         'port': 22,
+         'secret' : '!',
+         'verbose' : True
+        }
+con = ConnectHandler(**cisco_device)
+con.send_command("terminal length 0")
+
+
+ver = con.send_command("sh ver", use_textfsm=True)
+#print(ver)
+
+ver = ver[0]
+print(ver["hostname"])
+print(ver["version"])
+print(ver["hardware"])
+print(ver["serial"])
+print(ver["uptime"])
