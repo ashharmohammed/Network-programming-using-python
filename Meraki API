@@ -1,0 +1,63 @@
+import meraki
+import xlsxwriter
+
+workbook = xlsxwriter.Workbook('Meraki Sites with bandwidth.xlsx')
+sheet = workbook.add_worksheet()
+sheet.write(0, 0, "Network")
+sheet.write(0, 1, "WAN1 Upload")
+sheet.write(0, 2, "WAN1 Download")
+sheet.write(0, 3, "WAN2 Upload")
+sheet.write(0, 4, "WAN2 Download")
+sheet.write(0, 5, "Cellular Upload")
+sheet.write(0, 6, "Cellular Download")
+
+
+i = 1
+key = ""
+db = meraki.DashboardAPI(key)
+org = db.organizations.getOrganizations()
+org = org[0]
+orgid = org["id"]
+
+nets = db.organizations.getOrganizationNetworks(orgid)
+print(nets)
+
+for net in nets:
+    if net["name"] == "FDR-Cameras":
+        continue
+    sheet.write(i, 0, net["name"])
+    print(net["name"])
+    id = net["id"]
+    bw = db.appliance.getNetworkApplianceTrafficShapingUplinkBandwidth(id)
+    bw = bw["bandwidthLimits"]
+    sheet.write(i, 1, bw["wan1"]["limitUp"])
+    sheet.write(i, 2, bw["wan1"]["limitDown"])
+    try:
+        sheet.write(i, 3, bw["wan2"]["limitUp"])
+        sheet.write(i, 4, bw["wan2"]["limitDown"])
+        sheet.write(i, 5, bw["cellular"]["limitUp"])
+        sheet.write(i, 6, bw["cellular"]["limitDown"])
+    except KeyError:
+        sheet.write(i, 3, "NA")
+        sheet.write(i, 4, "NA")
+        sheet.write(i, 5, "NA")
+        sheet.write(i, 6, "NA")
+    i = i +1
+
+workbook.close()
+
+
+def home(request):
+    # sites = a.objects.all()
+      sites = a.objects.order_by('Name')
+    # template = loader.get_template('food/index.html')
+      context = {
+      'sites': sites
+                }
+# return HttpResponse(template.render(context,request))
+      return render(request, 'home/home.html', context)
+
+
+index = 100
+for i in index:
+    print(i)
