@@ -13,8 +13,8 @@ for line in f1:
         if 'WARNING' in x:
             print(line + ' is standby firewall')
             continue
-        my_package.send_command(con, "object-group network RYUK-External-IOCs")
-        my_package.send_command(con, "network-object 162.217.96.0 255.255.255.248.0 ")
+        my_package.send_command(con, "")
+        my_package.send_command(con, "n0 ")
         my_package.send_command(con,'exit')
         my_package.send_command(con,'exit')
         my_package.send_command(con,'wr')
@@ -28,7 +28,7 @@ for line in f1:
             print(line + ' is standby firewall')
             continue
         my_package.send_command(con, "object-group network RYUK-External-IOCs")
-        my_package.send_command(con, "network-object 144.202.0.0 255.255.0.0 ")
+        my_package.send_command(con, "n")
         my_package.send_command(con, 'exit')
         my_package.send_command(con, 'exit')
         my_package.send_command(con, 'wr')
