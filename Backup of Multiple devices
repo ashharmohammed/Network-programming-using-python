@@ -2,7 +2,7 @@ import my_package
 f1 = open('input.txt')
 for line in f1:
     line = line.strip()
-    ssh = my_package.connect(line,22,'root','Tg2BaBw!')
+    ssh = my_package.connect(line,22,'username','Password')
     con = my_package.get_shell(ssh)
     my_package.send_command(con,'tmsh')
     my_package.send_command(con,'show running-config')
