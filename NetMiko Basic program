@@ -1,6 +1,6 @@
 from netmiko import Netmiko
 
-connection = Netmiko(host='152.144.209.58', username='admin', password='Tg2BaBw!',device_type='cisco_ios')
+connection = Netmiko(host='152.144.209.58', username='', password='',device_type='cisco_ios')
 
 
 out = connection.send_command('show version')
