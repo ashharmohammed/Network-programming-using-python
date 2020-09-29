@@ -16,10 +16,10 @@ for line in f1:
         cisco_device = {
             'device_type': 'cisco_ios',
             'ip': line ,
-            'username': 'nex8kwp' ,
-            'password': 'Ernesto@123',
+            'username': '' ,
+            'password': '',
             'port': 22,
-            'secret': 'Ernesto@123',
+            'secret': '',
             'verbose': True
         }
         con = ConnectHandler(**cisco_device)
@@ -27,10 +27,10 @@ for line in f1:
         cisco_device = {
             'device_type': 'cisco_ios',
             'ip': line,
-            'username': 'pbadmins',
-            'password': 'pb@f!RE&#@l#',
+            'username': '',
+            'password': '',
             'port': 22,
-            'secret': 'pb@f!RE&#@l#',
+            'secret': '',
             'verbose': True
         }
         print('using exception')
