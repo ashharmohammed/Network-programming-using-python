@@ -1,0 +1,93 @@
+import os
+from netmiko import Netmiko, ConnectHandler
+import xlsxwriter
+import textfsm
+import smtplib
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
+from email.mime.base import MIMEBase
+from email import encoders
+import time
+
+workbook = xlsxwriter.Workbook('C:\\Users\\mo374242\\Desktop\\AnyAny.xlsx')
+sheet = workbook.add_worksheet()
+sheet.write(0,0,"Hostname")
+sheet.write(0,1,"Vulunerable Rules")
+
+
+n = 1
+os.environ["NET_TEXTFSM"] = "FSMTemplates/ntc-templates-master/templates"
+f = open("inventory.txt")
+#f = [""]
+for ip in f:
+    time.sleep(1)
+    ip = ip.strip()
+    try:
+        cisco_device = {
+                 'device_type': 'cisco_asa',
+                 'ip' : ip,
+                 'username' : '',
+                 'password' : '',
+                 'port': 22,
+                 'secret' : '!',
+                 'verbose' : True
+                }
+        con = ConnectHandler(**cisco_device)
+        con.send_command("terminal pager 0")
+        ver = con.send_command("show version", use_textfsm=True)
+        print(ver)
+        ver = ver[0]
+        print(ver)
+        name = ver["hostname"]
+        print(name)
+        sheet.write(n,0,name)
+        acl = con.send_command("show run access-list")
+        acl = acl.splitlines()
+        #print(acl)
+        for i in acl:
+            count = 0
+            if "permit" in i and "icmp" not in i:
+                j = i.split()
+                for k in j:
+                    if k == "any":
+                        count = count + 1
+                if count > 1:
+                    sheet.write(n, 1, str(i))
+                    n = n + 1
+                    print(i)
+                    print(n)
+
+            else:
+                continue
+    except:
+        sheet.write(n,0,"unable to Login:" + str(ip))
+        n = n + 1
+
+workbook.close()
+
+
+con.disconnect()
+
+
+fromaddr = ""
+toaddr = ""
+msg = MIMEMultipart()
+msg['From'] = fromaddr
+msg['To'] = toaddr
+msg['Subject'] = "Any Any Rules in Firewalls"
+body = "Hi All,\n\nThis is automated Any Any rule analysis report."
+msg.attach(MIMEText(body, 'plain'))
+filename = "AnyAny.xlsx"
+
+attachment = open("C:\\Users\\mo374242\\Desktop\\AnyAny.xlsx", "rb")
+
+p = MIMEBase('application', 'octet-stream')
+p.set_payload((attachment).read())
+encoders.encode_base64(p)
+p.add_header('Content-Disposition', 'attachment; filename = AnyAny.xlsx')
+msg.attach(p)
+s = smtplib.SMTP('smtp.pb.com')
+
+s.send_message(msg)
+s.quit()
+
