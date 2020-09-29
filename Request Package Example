@@ -1,0 +1,35 @@
+import requests
+
+#subnet = input("Enter the subnet range")
+
+requests.packages.urllib3.disable_warnings()
+
+url = "https://hfh/wapi/v1.7/network?_return_as_object=1"
+
+
+querystring = {"_max_results":"3","_paging":"1","_return_as_object":"1"}
+response = requests.request("GET", url, auth=('', ''), verify=False, params = querystring)
+out = response.json()
+net = out['result']
+for i in range(0,len(net)-1):
+    diction = net[i]
+    network = diction['network']
+    print(network)
+    url1 = "https://url/wapi/v1.7/ipv4address?network=161.228.38.0/23"
+    response = requests.request("GET", url, auth=('', ''), verify=False, params=querystring)
+
+    print(response.text)
+
+print(net)
+'''
+next_page_id = response.json()['next_page_id']
+while next_page_id:
+        query = {"_page_id":next_page_id}
+        newresponse = requests.request("GET", url, auth=('', ''), params=querystring,verify=False)
+        print(newresponse.text)
+        try:
+                next_page_id = newresponse.json()['next_page_id']
+        except Exception:
+                next_page_id = 0
+
+'''
